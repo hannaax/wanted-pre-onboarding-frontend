@@ -82,12 +82,23 @@ const Signin = () => {
           Submit
         </Button>
       </form>
+      <UserCheck>
+        <p>회원이 아닙니까?</p>
+        <button
+          onClick={() => {
+            navigate("/signup");
+          }}
+        >
+          회원가입
+        </button>
+      </UserCheck>
     </Container>
   );
 };
 
 const Container = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
@@ -109,11 +120,6 @@ const Container = styled.div`
     color: #222;
     text-align: center;
     margin: 20px;
-  }
-
-  > form label {
-    font-size: 12px;
-    color: gray;
   }
 
   > form input {
@@ -144,6 +150,24 @@ const Button = styled.button`
   margin-top: 25px;
   margin-bottom: 30px;
   pointer-events: ${(props) => (props.disabled ? "none" : null)};
+`;
+
+const UserCheck = styled.div`
+  display: flex;
+  margin: 30px;
+
+  > p {
+    margin-right: 10px;
+    font-size: 13.5px;
+  }
+
+  > button {
+    border: none;
+    background-color: transparent;
+    font-size: 13.5px;
+    color: #00a2e8;
+    cursor: pointer;
+  }
 `;
 
 export default Signin;

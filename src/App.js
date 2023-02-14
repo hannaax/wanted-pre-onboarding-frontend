@@ -9,7 +9,7 @@ import { Route, Routes } from "react-router-dom";
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Register />} />
+      <Route path="/" element={<Signin />} />
       <Route path="/todo" element={<Todo />} />
       <Route path="/signup" element={<Register />} />
       <Route path="/signin" element={<Signin />} />
