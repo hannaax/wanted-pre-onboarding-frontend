@@ -13,37 +13,11 @@ import { instance } from "../api/instance";
 function Todos() {
   const [todos, setTodos] = useState([]);
   const [todo, setTodo] = useState("");
-  const [todoEditing, setTodoEditing] = useState(null); // todoEditing의 역할을 모르겠다
+  const [todoEditing, setTodoEditing] = useState(null);
   const [editingText, setEditingText] = useState("");
-  // -----local-storage 시작-----
-  // 작동 안됨
-  // edit 기능과 useEffect를 통한 local-storage 기능에 대해 더 알아보기
-  useEffect(() => {
-    const temp = localStorage.getItem("todos");
-    const loadedTodos = JSON.parse(temp);
-
-    if (loadedTodos) {
-      setTodos(loadedTodos);
-    }
-  }, []);
-
-  useEffect(() => {
-    const temp = JSON.stringify(todos);
-    localStorage.setItem("todos", temp);
-  }, [todos]);
-  // -----local-storage 끝-----
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const newTodo = {
-      id: new Date().getTime(),
-      todo: todo,
-      isCompleted: todo.completed,
-    };
-
-    // setTodos([...todos].concat(newTodo));
-    // setTodo("");
 
     if (todo) {
       instance
@@ -52,7 +26,8 @@ function Todos() {
         })
         .then((res) => {
           console.log(res);
-          setTodos(todos.concat(newTodo));
+          setTodos(todos.concat(res.data));
+          console.log(todos);
           setTodo("");
         })
         .catch((err) => console.log(err));
@@ -62,39 +37,38 @@ function Todos() {
   };
 
   const deleteTodo = (id) => {
-    const updatedTodo = todos.filter((todo) => todo.id !== id);
-    console.log(todos);
-    setTodos(updatedTodo);
     instance
       .delete(`/todos/${id}`)
       .then((res) => {
         console.log(res);
+        setTodos((todos) => todos.filter((todo) => todo.id !== id));
       })
       .catch((err) => console.log(err));
   };
 
-  const toggleComplete = (id) => {
-    const updatedTodos = todos.map((todo) => {
-      if (todo.id === id) {
-        todo.completed = !todo.completed;
-        console.log(todo);
-      }
-      return todo;
-    });
-
-    setTodos(updatedTodos);
+  const toggleComplete = (id, todo, isCompleted) => {
+    instance
+      .put(`/todos/${id}`, {
+        todo: todo,
+        isCompleted: !isCompleted,
+      })
+      .then((res) => {
+        console.log(res);
+        // 완료상태가 변한 todo를 todos에 넣어주고, setTodos 실행
+        const updatedTodos = todos.map((todo) => {
+          if (todo.id === id) {
+            todo.isCompleted = res.data.isCompleted;
+            console.log(todo);
+          }
+          return todo;
+        });
+        console.log(updatedTodos);
+        setTodos(updatedTodos);
+      })
+      .catch((err) => console.log(err));
   };
 
   const submitEdits = (id, isCompleted) => {
-    const updatedTodos = todos.map((todo) => {
-      if (todo.id === id) {
-        todo.todo = editingText;
-      }
-      return todo;
-    });
-    setTodos(updatedTodos);
-    setTodoEditing(null);
-    setEditingText("");
     instance
       .put(`/todos/${id}`, {
         todo: editingText,
@@ -102,7 +76,17 @@ function Todos() {
       })
       .then((res) => {
         console.log(res);
-      });
+        const updatedTodos = todos.map((todo) => {
+          if (todo.id === id) {
+            todo.todo = res.data.todo;
+          }
+          return todo;
+        });
+        setTodos(updatedTodos);
+        setTodoEditing(null);
+        setEditingText("");
+      })
+      .catch((err) => console.log(err));
   };
 
   useEffect(() => {
@@ -111,6 +95,7 @@ function Todos() {
       instance.get("/todos").then((res) => {
         console.log(res);
         setTodos(res.data);
+        console.log(res.data);
       });
     }
   }, []);
@@ -149,8 +134,10 @@ function Todos() {
                     type="checkbox"
                     className="checkbox"
                     id="completed"
-                    checked={todo.completed}
-                    onChange={() => toggleComplete(todo.id)}
+                    checked={todo.isCompleted}
+                    onChange={() =>
+                      toggleComplete(todo.id, todo.todo, todo.isCompleted)
+                    }
                   />
                   {todo.id === todoEditing ? (
                     <input
@@ -159,21 +146,22 @@ function Todos() {
                       onChange={(e) => setEditingText(e.target.value)}
                     />
                   ) : (
-                    // <div>{todo.todo}</div>
-                    <TodoText isChecked={todo.completed}>{todo.todo}</TodoText>
+                    <TodoText isChecked={todo.isCompleted}>
+                      {todo.todo}
+                    </TodoText>
                   )}
                 </div>
                 <div className="todo-actions">
                   {todo.id === todoEditing ? (
-                    <>
-                      <button
-                        data-testid="submit-button"
-                        className="btns"
-                        onClick={() => submitEdits(todo.id, todo.isCompleted)}
-                      >
-                        <FontAwesomeIcon icon={faCheck} />
-                      </button>
-                    </>
+                    <button
+                      data-testid="submit-button"
+                      className="btns"
+                      onClick={() => {
+                        submitEdits(todo.id, todo.isCompleted);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faCheck} />
+                    </button>
                   ) : (
                     <button
                       data-testid="modify-button"
@@ -224,17 +212,12 @@ const Container = styled.div`
 
 const Div = styled.div`
   width: 500px;
-  /* margin: 60px auto; */
   height: 500px;
   background: #f4f4f4;
   overflow: auto;
   border-radius: 15px;
   padding-bottom: 10px;
-  /* box-shadow: 10px 10px 10px rgb(183, 183, 183); */
 
-  /* > div h1 {
-    text-align: center;
-  } */
   &::-webkit-scrollbar {
     display: none;
   }
@@ -294,11 +277,9 @@ const TodoList = styled.div`
     font-size: 13px;
     background-color: transparent;
     color: #222;
-    /* border-radius: 8px; */
     border: none;
     margin: 8px 5px;
     cursor: pointer;
-    /* height: 45px; */
   }
 
   .todo-text {
