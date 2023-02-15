@@ -22,7 +22,6 @@ const Signin = () => {
       .then((res) => {
         console.log(res);
         if (res.status !== 200) return alert("로그인에 실패했습니다.");
-        // localStorage.setItem("token", Object.values(res.data));
         localStorage.setItem("token", res.data.access_token);
         navigate("/todo");
       })
