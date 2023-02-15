@@ -15,13 +15,10 @@ const Register = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("회원가입");
-    console.log(userInfo);
 
     instance
       .post("/auth/signup", userInfo)
       .then((res) => {
-        console.log(res);
         if (res.status !== 201) return alert("회원가입에 실패했습니다.");
         navigate("/signin");
       })
